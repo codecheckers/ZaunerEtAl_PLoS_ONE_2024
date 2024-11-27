@@ -12,7 +12,7 @@ params:
   Power_level: 0.8
   sign_level: 0.05
   valid_data_threshold: 0.8
-  n_samples: 1000
+  n_samples: 10
   sample_size_min: 3
   sample_size_max: 50
   seed: 20231212
@@ -458,12 +458,21 @@ Nonwear_summary %>%
 Figure.2
 ggsave("Figures/Figure2.png", Figure.2, height = 8.5, width = 13, units='cm')
 
-#summarize the non-wear times as a table
+                                      ##summarize the non-wear times as a table
+
+## SJE -- why is this a problem?
+## Nonwear_summary %>% 
+##   gtsummary::tbl_summary(
+##     statistic = list(NonWear ~"{min} - {max}"),
+##     label = list(NonWear ~ "Non-Wear Time",
+##                  valid_Day ~ "Valid Days"),
+##     by = valid_Day)
+
 Nonwear_summary %>% 
   gtsummary::tbl_summary(
     statistic = list(NonWear ~"{min} - {max}"),
-    label = list(NonWear ~ "Non-Wear Time",
-                 valid_Day ~ "Valid Days"),
+    label = list(NonWear ~ "Non-Wear Time"),
+    ##valid_Day ~ "Valid Days"),
     by = valid_Day)
 
 ```
