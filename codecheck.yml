@@ -1,0 +1,45 @@
+---
+version: https://codecheck.org.uk/spec/config/1.0
+
+paper:
+  title: >
+    Power analysis for personal light exposure measurements and interventions
+  authors:
+    - name: Johannes Zauner
+      ORCID: 0000-0003-2171-4566
+    - name: Ljiljana Udovicic
+      ORCID: 0000-0002-6035-8309
+    - name: Manuel Spitschan
+      ORCID: 0000-0002-8572-9268
+  reference: https://www.researchsquare.com/article/rs-3771881/v1
+
+manifest:
+  - file: Figures/Figure1.png
+    comment: manuscript Figure 1
+  - file: Figures/Figure2.png
+    comment: manuscript Figure 2
+  - file: Figures/Figure3.png
+    comment: manuscript Figure 3
+  - file: Figures/Figure4.png
+    comment: manuscript Figure 4
+  - file: Figures/FigureS1.png
+    comment: manuscript Figure S1
+  - file: Figures/FigureS2.png
+    comment: manuscript Figure S2
+  - file: Figures/FigureS3.png
+    comment: manuscript Figure S3
+  - file: Figures/FigureS4.png
+    comment: manuscript Figure S4
+
+    
+codechecker:
+  - name: Stephen J. Eglen
+    ORCID: 0000-0001-8607-8025
+
+summary: >
+  R quarto document that was able to compile, but see certificate for
+  details of issues arising.
+repository: https://github.com/codecheckers/ZaunerEtAl_PLoS_ONE_2024
+check_time: "2024-11-28 11:00:00"
+certificate: 2024-018
+report: https://doi.org/10.5281/zenodo.14235113

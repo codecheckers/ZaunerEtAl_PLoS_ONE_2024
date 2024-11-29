@@ -1,0 +1,335 @@
+---
+output:
+  pdf_document:
+    toc: false
+    includes:
+       in_header: codecheck-preamble.sty
+    latex_engine: xelatex
+---
+
+```{r rsetup,eval=TRUE,include=FALSE}
+require("codecheck")
+require("knitr")
+require("rprojroot")
+require("yaml")
+require("xtable")
+require("tibble")
+require("readr")
+options(width = 60)
+opts_chunk$set(cache=FALSE)
+
+root = find_root("codecheck.yml")
+```
+
+```{r codecheck_logo, echo=FALSE,results='asis'}
+latex_codecheck_logo()
+```
+
+```{r manifest, eval=TRUE, include=FALSE}
+metadata = codecheck_metadata(root)
+manifest = metadata$manifest
+
+dest_dir = file.path(root, "codecheck", "outputs")
+## Create the outputs directory if missing
+if ( !dir.exists(dest_dir) ) {
+  dir.create(dest_dir)
+}
+
+manifest_df = copy_manifest_files(root, metadata,
+                                  dest_dir, keep_full_path = FALSE,
+                                  overwrite = FALSE
+                                  )
+```
+
+---
+title: `r paste("CODECHECK certificate", metadata$certificate)`
+subtitle: `r codecheck:::as_latex_url(metadata$report)`
+---
+
+```{r summary_metadata, echo=FALSE, results='asis'}
+latex_summary_of_metadata(metadata)
+```
+
+```{r summary_manifest, echo=FALSE, results='asis'}
+latex_summary_of_manifest(metadata, manifest_df, root)
+```
+
+# Summary
+
+I could reproduce the Quarto document that generated all the figures
+that were found in the paper.  It was however not straightforward for
+two reasons:
+
+1.  Although the R packaging ecosystem is good, with so many
+    dependencies there can be edge cases to resolve manually.  In
+    this case, as noted in the comments of the document, I had a
+    problem with "lme4", so followed the advice in the document.  I
+    also had an issue with one of the packages on github.
+
+2.  I hit an error within the Rmd that I was unable to fix; luckily,
+    removing that code chunk had no negative effect on the rest of the
+    document compiling.
+	
+Otherwise, the document compiled. I am grateful to the authors'
+clear instructions on reducing the computation time by reducing the
+number of samples to simulate.
+
+\clearpage
+
+# CODECHECKER notes
+
+I found the code and data to be clearly arranged, and this promised to
+be a very quick codecheck based on my experience of working with other
+projects from this research group.
+
+As noted in the summary though, I did hit some issues, but fortunately
+I could resolve them myself.
+
+## Preliminaries
+
+To start I moved the original figures and html:
+```{sh eval=FALSE}
+ cp PowerCalc.html PowerCalc-orig.html
+ mv Figures Figurees-orig
+ mkdir Figures
+```
+
+## Reducing computation time
+
+The authors provided a clear mechanism for reducing the computation
+time for sampling (related to Figure 4).  I therefore changed line 15
+of the quarto doc to read:
+
+```
+  n_samples: 10
+```
+
+## Installation steps
+
+I liked the use of pacman, a package I'd not seen before, for the
+on-demand installation of packages.  Perhaps the only oddity was that
+it didn't tag the versions of the packages that were required.
+
+### Installation of lme4
+
+The first error I hit was that lme4 package was causing errors.  The
+authors did note that this might be an issue, and so I simply ran the
+following, as suggested:
+
+```{r eval=FALSE}
+oo <- options(repos = "https://cran.r-project.org/")
+install.packages("Matrix", type = "source")
+install.packages("lme4", type = "source")
+options(oo)
+library(lme4)
+library(lmerTest)
+```
+
+### Installation of loglightR
+
+I could not get the group's package to install from github:
+
+```{r eval=FALSE}
+> p_load_gh(char = packages_github)
+```
+
+
+
+generated the error:
+
+```
+Error in utils::download.file(url, path, method = method, quiet = quiet,  : 
+  download from 'https://api.github.com/repos/tscnlab/LightLogR/tarball/HEAD' failed
+Warning messages:
+1: In p_install_gh(package, dependencies, ...) :
+  The following may have incorrect capitalization specification:
+
+LightLogR
+2: In p_load_gh(char = packages_github) : 
+Failed to install/load:
+tscnlab/LightLogR
+```
+
+Luckily, I was able to use the version available on CRAN, which worked
+fine:
+
+```{r eval=FALSE}
+install.packages("LightLogR")
+```
+
+
+## Running the code
+
+Once package dependencies were satisfied, most of the code worked fine
+until this snippet:
+
+```{r eval=FALSE}
+> Nonwear_summary %>%
++ gtsummary::tbl_summary(
++ statistic = list(NonWear ~"{min} - {max}"),
++ label = list(NonWear ~ "Non-Wear Time",
++ valid_Day ~ "Valid Days"),
++ by = valid_Day)
+Error in `gtsummary::tbl_summary()`:
+! Error processing `label` argument.
+! Can't select columns that don't exist. ✖ Column `valid_Day` doesn't exist.
+ℹ Select among columns "Id", "Season", "Day", and "NonWear"
+Run `rlang::last_trace()` to see where the error occurred.
+
+> colnames(Nonwear_summary)
+[1] "Id"        "Season"    "Day"       "NonWear"   "valid_Day"
+```
+
+I am not expert enough in the tidyverse to see why this error was
+generated.  Further, I needed to use `rmarkdown::render` to render the
+document, rather than quarto, so that I could do some debugging.  I
+found:
+
+I therefore gave up, changed the chunk to the following, and
+pressed-on.
+
+
+```{r eval=FALSE}
+Nonwear_summary %>% 
+  gtsummary::tbl_summary(
+    statistic = list(NonWear ~"{min} - {max}"),
+    label = list(NonWear ~ "Non-Wear Time"),
+    ##valid_Day ~ "Valid Days"),
+    by = valid_Day)
+```
+
+By luck, the document then compiled.  I concluded that rendering this
+problematic table was not required for the rest of the computation.
+
+Visual comparison of my version of the  figures with their versions
+showed that we had reproduced all the  manuscript Figures.  The only
+difference I observed was that my Figure 4 showed much more variance
+than their Figure 4.  This is entirely expected given I only ran 10
+samples, rather than 1000.
+
+## Computation time
+
+I ran this on a MacBook Pro M1 laptop; once all packages were
+installed, it took maybe 5-10 minutes to compile.
+
+
+## Highlights
+
+1. I liked the clear instructions and mechanisms for reducing the
+   number of samples required.
+
+2. The code vignette generated the "camera ready" figures that
+   appeared in the publication.  (Often times in other work there is
+   manual post-processing of Figures before including them in the manuscript.
+
+2. Excellent to see quarto now being used for such projects.  (It has
+   spurred me on to plan a rewrite of codecheck infrastructure to move
+   away from Rmd to quarto.)
+
+
+## Recommendations
+
+Here are some comments if the authors are interested in the 'next
+level' in reproducibility.
+
+1. Trivial point: your readme didn't tell someone who is new to Quarto
+   exactly how to render the document.
+
+2. Consider use of renv (has been done before in the research group)
+for stating package dependencies.
+
+3. Convert the code repository into an R package;  in this way, by
+running something like:
+
+```{R eval=FALSE}
+remotes::install_package("tcnslab/...")
+```
+might help you with installation issues (or it might not).  But having
+a package for a significant body of work like this would make things
+tidy.
+
+5. Adding the following to the end of a quarto document will document
+   what environment you compiled your work in.  See for example the
+   end of this document for what it generates:
+
+```{r eval=FALSE}
+sessionInfo()
+```
+
+\clearpage
+
+
+# Manifest files
+
+```{r, echo=FALSE, results="asis", width=100}
+for(i in c(1:nrow(manifest_df))) {
+  path <- manifest_df[i,"dest"]
+  if(stringr::str_ends(path, "(png|pdf|jpg|jpeg)")) {
+    # include graphics with knitr has to happen at top level in chunks, see https://github.com/yihui/knitr/issues/1260
+    # see also https://stackoverflow.com/questions/51268623/insert-images-using-knitrinclude-graphics-in-a-for-loop
+    # knitr::include_graphics(manifest_df[1, "dest"], error = TRUE)
+    # Therefore, generate Markdown code here:
+    cat("## ", basename(path), "\n\n")
+    cat("**Comment:** ", manifest_df[i,"comment"], "\n\n")
+    cat(paste0("![", "Test ", "](", path, ")\n"))
+  } else if (stringr::str_ends(path, "(Rout|txt)")) {
+    cat("## ", basename(path), "\n\n")
+    cat("\\scriptsize \n\n", "```txt\n")
+    cat(readLines(path), sep = "\n")
+    cat("\n\n``` \n\n", "\\normalsize \n\n")
+  } else if (stringr::str_ends(path, "csv")) {
+    cat("## ", basename(path), "\n\n", "Summary statistics of tabular data:", "\n\n")
+    cat("\\scriptsize \n\n", "```txt\n")
+    print(skimr::skim(read.csv(path)))
+    cat("\n\n``` \n\n", "\\normalsize \n\n")
+  } else {
+    cat("## ", basename(path), "\n\n")
+    cat("Cannot inlcude output file as figure.")
+  }
+  
+  cat("\\clearpage \n\n")
+}
+```
+
+\clearpage
+
+## Acknowledgements
+
+I would like to thank Dr Bhatt and his team for promptly answering any
+queries I had with this reproduction.  CODECHECK is financially
+supported by the Mozilla foundation.
+
+# Citing this document
+
+```{r, results='asis',echo=FALSE}
+cite_certificate(metadata)
+```
+
+# About CODECHECK
+
+This certificate confirms that the codechecker could independently
+reproduce the results of a computational analysis given the data and
+code from a third party.  A CODECHECK does not check whether the
+original computation analysis is correct.  However, as all materials
+required for the reproduction are freely available by following the
+links in this document, the reader can then study for themselves the
+code and data.
+
+
+# About this document
+
+This document was created using [R Markdown](https://rmarkdown.rstudio.com/) using the [`codecheck`](https://github.com/codecheckers/codecheck) R package.
+`make codecheck.pdf` will regenerate the report file.
+
+```{r}
+sessionInfo()
+```
+
+```{sh eval=TRUE}
+quarto --version
+```
+
+```{r, include=FALSE, eval=FALSE}
+# render this document in RStudio
+rmarkdown::render("codecheck.Rmd", output_format = "pdf_document") 
+```
