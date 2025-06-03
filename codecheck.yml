@@ -11,7 +11,9 @@ paper:
       ORCID: 0000-0002-6035-8309
     - name: Manuel Spitschan
       ORCID: 0000-0002-8572-9268
-  reference: https://doi.org/10.21203/rs.3.rs-3771881/v1
+  reference: https://doi.org/10.1371/journal.pone.0308768
+  # preprint reference: https://doi.org/10.21203/rs.3.rs-3771881/v1
+  # corretion reference that includes the link to the certificate: https://doi.org/10.1371/journal.pone.0325944
 
 manifest:
   - file: Figures/Figure1.png
